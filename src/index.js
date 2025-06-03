@@ -11,10 +11,15 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 const server = http.createServer(app);
+const cron = require("node-cron");
+const { autoCleanUsers } = require("./scripts/cleanupFunction");
+const passport = require("passport");
+require("./auth/passport");
 
 app.use(cors());
 app.use(bodyParser.json());
 
+app.use(passport.initialize());
 routes(app);
 
 // Kết nối MongoDB
@@ -28,6 +33,7 @@ mongoose
   });
 
 setupSocket(server);
+cron.schedule("0 3 * * *", autoCleanUsers);
 
 server.listen(port, () => {
   console.log(`Server: ${port}`);

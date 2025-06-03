@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const commentSchema = require("./CommentSchema");
 
 const postSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -13,17 +14,14 @@ const postSchema = new mongoose.Schema({
   repostCount: { type: Number, default: 0 },
   privacy: {
     type: String,
-    enum: ["public", "friends", "private"],
+    enum: ["public", "private"],
     default: "public",
   },
-  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  comments: [
-    {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      content: { type: String, required: true },
-      createdAt: { type: Date, default: Date.now },
-    },
-  ],
+  likes: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    default: [],
+  },
+  comments: [commentSchema],
   reports: [
     {
       userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -32,6 +30,14 @@ const postSchema = new mongoose.Schema({
     },
   ],
   createdAt: { type: Date, default: Date.now },
+  reportStatus: {
+    type: String,
+    enum: ["pending", "hidden", "ignored"],
+  },
+  hiddenAt: {
+    type: Date,
+    default: null,
+  },
 });
 
 const Post = mongoose.model("Post", postSchema);

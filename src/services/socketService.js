@@ -1,46 +1,85 @@
 const { Server } = require("socket.io");
+const Message = require("../models/MessageModel");
+const Conversation = require("../models/ConversationModel");
 
-let onlineUsers = new Map();
+let onlineUsers = new Map(); // userId => socketId
 let io;
 
 const setupSocket = (server) => {
   io = new Server(server, {
-    cors: {
-      origin: "*",
-    },
+    cors: { origin: "*" },
   });
-
-  global.onlineUsers = onlineUsers;
 
   io.on("connection", (socket) => {
-    console.log("User connected:", socket.id);
-
     socket.on("userOnline", (userId) => {
-      onlineUsers.set(userId, socket.id);
-      console.log("Online Users:", onlineUsers);
+      onlineUsers.set(userId.toString(), socket.id); // luôn string
+      socket.userId = userId;
       io.emit("updateOnlineUsers", Array.from(onlineUsers.keys()));
     });
 
-    socket.on("disconnect", () => {
-      let userId = [...onlineUsers.entries()].find(
-        ([_, id]) => id === socket.id
-      );
-      if (userId) {
-        onlineUsers.delete(userId[0]);
+    socket.on("joinConversation", (conversationId) => {
+      socket.join(conversationId);
+    });
+
+    socket.on(
+      "sendMessage",
+      async ({ conversationId, text, media = [], sender, clientTempId }) => {
+        try {
+          const userId = socket.userId || sender;
+
+          const message = new Message({
+            conversationId,
+            sender: userId,
+            text,
+            media,
+          });
+          await message.save();
+
+          await Conversation.findByIdAndUpdate(conversationId, {
+            lastMessage: { text, sender: userId, createdAt: new Date() },
+          });
+
+          const populated = await Message.findById(message._id).populate(
+            "sender",
+            "username avatarUrl"
+          );
+
+          io.to(conversationId).emit("receiveMessage", {
+            ...populated.toObject(),
+            clientTempId,
+            senderInfo: {
+              _id: populated.sender._id,
+              username: populated.sender.username,
+              avatarUrl: populated.sender.avatarUrl || "",
+            },
+          });
+        } catch (err) {
+          console.error("Socket sendMessage error:", err);
+        }
       }
-      console.log("User disconnected:", socket.id);
+    );
+
+    socket.on("disconnect", () => {
+      const entry = Array.from(onlineUsers.entries()).find(
+        ([, id]) => id === socket.id
+      );
+      if (entry) onlineUsers.delete(entry[0]);
       io.emit("updateOnlineUsers", Array.from(onlineUsers.keys()));
     });
   });
-
-  global.io = io;
 };
 
 const getIo = () => {
-  if (!io) {
-    throw new Error("Socket.io chưa được khởi tạo!");
-  }
+  if (!io) throw new Error("Socket.io chưa được khởi tạo!");
   return io;
 };
 
-module.exports = { setupSocket, getIo };
+const getSocketId = (userId) => {
+  return onlineUsers.get(userId.toString()); // always string
+};
+
+module.exports = {
+  setupSocket,
+  getIo,
+  getSocketId,
+};

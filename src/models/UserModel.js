@@ -6,9 +6,15 @@ const UserSchema = new mongoose.Schema(
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 
-    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 
+    bio: { type: String, default: "" },
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     isAdmin: { type: Boolean, default: false },
+    isSuperAdmin: { type: Boolean, default: false },
+    avatarUrl: { type: String, default: "" },
+    isLocked: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

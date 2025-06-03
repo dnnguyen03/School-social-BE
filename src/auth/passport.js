@@ -1,7 +1,6 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../models/UserModel");
-const cloudinary = require("../config/cloudinaryConfig");
 
 passport.use(
   new GoogleStrategy(
@@ -23,48 +22,27 @@ passport.use(
             username = `gg_${profile.id}_${count++}`;
           }
 
-          // Upload avatar từ URL Google lên Cloudinary
-          const uploadedAvatar = await cloudinary.uploader.upload(
-            profile.photos[0].value,
-            {
-              folder: "user_avatars",
-              public_id: `avatar_${profile.id}`,
-            }
-          );
-
+          // ❌ Không lấy avatar từ Google nữa
           user = await User.create({
             fullName: profile.displayName,
             username,
             email,
             password: "GOOGLE_AUTH",
-            avatarUrl: uploadedAvatar.secure_url,
+            avatarUrl: null, // ✅ Dùng ảnh mặc định frontend
           });
         } else if (
           user.avatarUrl &&
           user.avatarUrl.includes("googleusercontent.com")
         ) {
-          // Nếu user cũ vẫn dùng ảnh Google → upload ngay và cập nhật
-          try {
-            const uploadedAvatar = await cloudinary.uploader.upload(
-              user.avatarUrl,
-              {
-                folder: "user_avatars",
-                public_id: `avatar_${user._id}`,
-              }
-            );
-
-            user.avatarUrl = uploadedAvatar.secure_url;
-            await user.save();
-
-            console.log("✅ Đã cập nhật avatar Cloudinary:", user.email);
-          } catch (uploadErr) {
-            console.error("❌ Lỗi upload avatar cũ:", uploadErr.message);
-          }
+          // ✅ Nếu user cũ dùng avatar Google → xóa
+          user.avatarUrl = null;
+          await user.save();
+          console.log("Đã xóa avatar Google cũ:", user.email);
         }
 
         done(null, user);
       } catch (error) {
-        console.error("❌ Lỗi trong GoogleStrategy:", error.message);
+        console.error("Lỗi trong GoogleStrategy:", error.message);
         done(error, null);
       }
     }
