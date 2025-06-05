@@ -14,7 +14,7 @@ const {
   lockUser,
   restoreUser,
   checkUsername,
-} = require("../controller/userController");
+} = require("../controller/UserController");
 
 const {
   authUserMiddleware,

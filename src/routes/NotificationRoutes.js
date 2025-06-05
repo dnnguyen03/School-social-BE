@@ -2,7 +2,7 @@ const express = require("express");
 const {
   getNotifications,
   markAllAsRead,
-} = require("../controller/notificationController");
+} = require("../controller/NotificationController");
 const router = express.Router();
 const { authUserMiddleware } = require("../middleware/authMiddleware");
 

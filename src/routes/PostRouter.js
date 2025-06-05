@@ -19,7 +19,7 @@ const {
   unhidePost,
   getPostById,
   searchPosts,
-} = require("../controller/postController");
+} = require("../controller/PostController");
 const {
   authUserMiddleware,
   authMiddleware,
