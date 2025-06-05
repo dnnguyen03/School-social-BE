@@ -1,5 +1,5 @@
 const Notification = require("../models/NotificationModel");
-const { io } = require("../services/socketService"); // Import socket để emit
+const { io } = require("../services/socketService");
 
 const createNotification = async (userId, senderId, type, postId, message) => {
   try {
@@ -13,7 +13,6 @@ const createNotification = async (userId, senderId, type, postId, message) => {
 
     await newNotification.save();
 
-    // Kiểm tra xem user có online không
     const socketId = global.onlineUsers.get(userId);
     if (socketId) {
       io.to(socketId).emit("newNotification", {

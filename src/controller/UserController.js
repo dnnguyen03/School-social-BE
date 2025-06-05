@@ -100,6 +100,43 @@ const loginUser = async (req, res) => {
   }
 };
 
+const checkUsername = async (req, res) => {
+  try {
+    const { username, currentUserId } = req.query;
+
+    if (!username) {
+      return res.status(400).json({
+        status: "ERR",
+        message: "Thiếu username cần kiểm tra",
+      });
+    }
+
+    const existingUser = await User.findOne({ username });
+
+    if (
+      !existingUser ||
+      (currentUserId && existingUser._id.toString() === currentUserId)
+    ) {
+      return res.status(200).json({
+        status: "OK",
+        exists: false,
+      });
+    }
+
+    return res.status(200).json({
+      status: "OK",
+      exists: true,
+    });
+  } catch (error) {
+    console.error("Lỗi checkUsername:", error);
+    res.status(500).json({
+      status: "ERR",
+      message: "Lỗi server",
+      error: error.message,
+    });
+  }
+};
+
 const updateProfile = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -441,5 +478,6 @@ module.exports = {
   searchUsers,
   getUserById,
   getMutuals,
+  checkUsername,
   updateProfile,
 };

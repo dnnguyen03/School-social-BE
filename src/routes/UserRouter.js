@@ -13,6 +13,7 @@ const {
   softDeleteUser,
   lockUser,
   restoreUser,
+  checkUsername,
 } = require("../controller/userController");
 
 const {
@@ -25,6 +26,7 @@ const router = express.Router();
 //  Public routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.get("/check-username", checkUsername);
 
 // User-authenticated routes
 router.get("/mutuals", authUserMiddleware, getMutuals);

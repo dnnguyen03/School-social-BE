@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const UserModel = require("../models/UserModel");
 dotenv.config();
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
     return res
@@ -11,22 +11,35 @@ const authMiddleware = (req, res, next) => {
       .json({ message: "Token không tồn tại", status: "ERROR" });
   }
 
-  jwt.verify(token, process.env.ACCESS_TOKEN, (err, user) => {
-    if (err) {
-      return res
-        .status(403)
-        .json({ message: "Token không hợp lệ", status: "ERROR" });
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
+    const user = await UserModel.findById(decoded.id);
+
+    if (!user) {
+      return res.status(403).json({ message: "Tài khoản không tồn tại" });
     }
 
-    if (user.isAdmin) {
-      req.user = user;
-      next();
-    } else {
+    if (user.isDeleted) {
+      return res.status(403).json({ message: "Tài khoản đã bị xóa" });
+    }
+
+    if (user.isLocked) {
+      return res.status(403).json({ message: "Tài khoản đang bị khóa" });
+    }
+
+    if (!user.isAdmin) {
       return res
         .status(403)
         .json({ message: "Bạn không có quyền", status: "ERROR" });
     }
-  });
+
+    req.user = user;
+    next();
+  } catch (err) {
+    return res
+      .status(403)
+      .json({ message: "Token không hợp lệ", status: "ERROR" });
+  }
 };
 
 const authUserMiddleware = async (req, res, next) => {
@@ -51,4 +64,5 @@ const authUserMiddleware = async (req, res, next) => {
     return res.status(403).json({ message: "Token không hợp lệ" });
   }
 };
+
 module.exports = { authMiddleware, authUserMiddleware };
