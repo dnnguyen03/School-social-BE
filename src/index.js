@@ -6,6 +6,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const http = require("http");
 const { setupSocket } = require("./services/socketService");
+const path = require("path");
 
 dotenv.config();
 const app = express();
@@ -38,6 +39,12 @@ cron.schedule("0 3 * * *", autoCleanUsers);
 // server.listen(port, () => {
 //   console.log(`Server: ${port}`);
 // });
+
+app.use(express.static(path.join(__dirname, "build")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 
 server.listen(port, "0.0.0.0", () => {
   console.log(`Server: ${port}`);
